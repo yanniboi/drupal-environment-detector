@@ -215,6 +215,8 @@ class AcquiaDrupalEnvironmentDetector {
    *
    * On ACSF, this is the ACSF db name.
    *
+   * On other other Acquia Hosted sites this is coming from and env variable.
+   *
    * @param string $site_path
    *   Directory site path.
    *
@@ -225,8 +227,33 @@ class AcquiaDrupalEnvironmentDetector {
     if (self::isAcsfEnv()) {
       return self::getAcsfDbName();
     }
+    if (self::isAhEnv()) {
+      $env = self::getAhEnv();
+      $site_name = self::getAhSiteName();
+
+      if ($site_name) {
+        // Env variable tends to have the environment appended to the site name.
+        // Eg. "sitenamedev" or "sitenameprod".
+        if (substr($site_name, -strlen($env)) === $env) {
+          $site_name = substr($site_name, 0, -strlen($env));
+        }
+        return $site_name;
+      }
+    }
 
     return str_replace('sites/', '', $site_path);
+  }
+
+  /**
+   * Get Acquia hosting site name.
+   *
+   * @return string
+   *   Environment site name (typically the application name with env appended).
+   *
+   * @see https://docs.acquia.com/cloud-platform/develop/env-variable/#available-environment-variables
+   */
+  public static function getAhSiteName(): ?string {
+    return getenv('AH_SITE_NAME');
   }
 
   /**
